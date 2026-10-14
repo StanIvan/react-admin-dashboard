@@ -1,0 +1,363 @@
+.apps-workspace {
+  display: grid;
+  gap: 13px;
+}
+
+.apps-toolbar,
+.apps-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apps-toolbar {
+  justify-content: space-between;
+}
+
+.apps-search {
+  display: flex;
+  width: min(100%, 290px);
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid #e9e8ef;
+  border-radius: 8px;
+  color: #9998a6;
+  background: #fff;
+}
+
+.apps-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #4d4c5e;
+  background: transparent;
+  font-size: 10px;
+}
+
+.apps-search input::placeholder {
+  color: #a2a1ae;
+}
+
+.apps-search kbd {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  border: 1px solid #e8e7ee;
+  border-radius: 4px;
+  color: #9998a6;
+  background: #fff;
+  font: 9px Inter, ui-sans-serif, sans-serif;
+}
+
+.apps-filter-group .task-filter {
+  min-width: 120px;
+}
+
+.apps-sort-button {
+  display: flex;
+  height: 35px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid #e9e8ef;
+  border-radius: 8px;
+  color: #777687;
+  background: #fff;
+  font-size: 10px;
+}
+
+.apps-sort-button:hover {
+  background: #f8f7fb;
+}
+
+.apps-result-count {
+  display: flex;
+  justify-content: space-between;
+  color: #9998a6;
+  font-size: 9px;
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.integration-card {
+  display: flex;
+  min-height: 181px;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #eeedf2;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(34 31 67 / 2%);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.integration-card:hover {
+  transform: translateY(-2px);
+  border-color: #dedbf2;
+  box-shadow: 0 7px 18px rgb(34 31 67 / 6%);
+}
+
+.integration-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.integration-icon {
+  display: grid;
+  width: 37px;
+  height: 37px;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.integration-icon-violet {
+  color: #6559c0;
+  background: #efedff;
+}
+
+.integration-icon-blue {
+  color: #4375ac;
+  background: #eaf2ff;
+}
+
+.integration-icon-slate {
+  color: #484957;
+  background: #f0eff3;
+}
+
+.integration-icon-pink {
+  color: #b65383;
+  background: #fbeaf2;
+}
+
+.integration-icon-orange {
+  color: #b96b3f;
+  background: #fff0e5;
+}
+
+.integration-icon-cyan {
+  color: #397e91;
+  background: #e5f5f8;
+}
+
+.integration-icon-green {
+  color: #43816c;
+  background: #e8f5ed;
+}
+
+.integration-icon-amber {
+  color: #987436;
+  background: #fff5dd;
+}
+
+.integration-button {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 9px;
+  border: 1px solid #e8e7ee;
+  border-radius: 7px;
+  color: #625dba;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.integration-button:hover {
+  background: #f4f2ff;
+}
+
+.integration-button.is-connected {
+  border-color: #d8ebdf;
+  color: #43846e;
+  background: #eef8f1;
+}
+
+.integration-category {
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #777687;
+  background: #f4f3f7;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.integration-card h2 {
+  margin-top: 7px;
+  color: #454456;
+  font: 700 11px Inter, ui-sans-serif, sans-serif;
+}
+
+.integration-card p {
+  margin-top: 4px;
+  color: #9695a4;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.integration-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.integration-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9998a6;
+  font-size: 8px;
+}
+
+.integration-state i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b5b4bf;
+}
+
+.integration-state.is-connected {
+  color: #43846e;
+}
+
+.integration-state.is-connected i {
+  background: #66aa8b;
+}
+
+.demo-caption {
+  color: #aaa9b4;
+  font-size: 8px;
+}
+
+.apps-demo-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid #e7e5f4;
+  border-radius: 8px;
+  color: #858394;
+  background: #f4f3fc;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.demo-note-mark {
+  display: grid;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #7065ca;
+  background: #e4e1ff;
+  font: 700 10px Inter, ui-sans-serif, sans-serif;
+}
+
+.apps-empty {
+  display: grid;
+  min-height: 220px;
+  justify-items: center;
+  align-content: center;
+  gap: 9px;
+  border: 1px dashed #e7e5ed;
+  border-radius: 10px;
+  color: #9998a6;
+  text-align: center;
+}
+
+.apps-empty > strong {
+  color: #555466;
+  font-size: 11px;
+}
+
+.apps-empty > span {
+  font-size: 10px;
+}
+
+.apps-empty > button {
+  margin-top: 2px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  color: #7165d8;
+  background: #f0eeff;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.dark-mode .apps-search,
+.dark-mode .apps-sort-button,
+.dark-mode .integration-card {
+  border-color: #3e3d52;
+  background: #26263a;
+}
+
+.dark-mode .apps-search input,
+.dark-mode .integration-card h2 {
+  color: #efedf9;
+}
+
+.dark-mode .apps-demo-note {
+  border-color: #414056;
+  color: #bab8ca;
+  background: #2a293f;
+}
+
+@media (max-width: 980px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .apps-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .apps-search {
+    width: 100%;
+  }
+
+  .apps-filter-group {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .apps-filter-group .task-filter {
+    flex: 0 0 auto;
+  }
+
+  .apps-grid {
+    gap: 9px;
+  }
+
+  .integration-card {
+    min-height: 190px;
+    padding: 11px;
+  }
+}
+
+@media (max-width: 390px) {
+  .apps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-card {
+    min-height: 165px;
+  }
+}
