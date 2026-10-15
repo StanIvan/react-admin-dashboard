@@ -144,7 +144,14 @@ export function UsersPage({
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
     const normalizedName = name.trim()
-    if (!normalizedName || !normalizedEmail) return
+    if (!normalizedName) {
+      setFormError('Name cannot be blank.')
+      return
+    }
+    if (!normalizedEmail) {
+      setFormError('Email address is required.')
+      return
+    }
     if (users.some((user) => user.email.toLowerCase() === normalizedEmail && user.email !== currentEmail)) {
       setFormError('A user with this email address already exists.')
       return
@@ -213,8 +220,8 @@ export function UsersPage({
         {(dialog === 'invite' || dialog === 'edit') && <form className="task-modal" onSubmit={saveUser}>
           <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
           <div className="task-modal-icon"><UserPlus size={19} /></div><h2>{dialog === 'edit' ? 'Edit user' : 'Invite a user'}</h2><p>{dialog === 'edit' ? 'Update this user’s workspace details and role.' : 'Add a teammate to your workspace.'}</p>
-          <label className="task-form-field">Full name<input required autoFocus maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Jordan Lee" /></label>
-          <label className="task-form-field">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" /></label>
+          <label className="task-form-field">Full name<input required autoFocus maxLength={80} value={name} onChange={(event) => { setName(event.target.value); setFormError('') }} placeholder="e.g. Jordan Lee" /></label>
+          <label className="task-form-field">Email address<input required type="email" value={email} onChange={(event) => { setEmail(event.target.value); setFormError('') }} placeholder="name@example.com" /></label>
           <label className="task-form-field">Role<select value={role} onChange={(event) => setRole(event.target.value as UserRole)}>{roles.map((item) => <option key={item}>{item}</option>)}</select></label>
           {formError && <p className="users-form-error" role="alert">{formError}</p>}
           <div className="task-modal-actions"><button className="task-secondary-button" type="button" onClick={() => setDialog(null)}>Cancel</button><button className="task-primary-button" type="submit">{dialog === 'edit' ? 'Save changes' : 'Add invitation'}</button></div>

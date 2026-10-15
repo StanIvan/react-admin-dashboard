@@ -34,6 +34,7 @@ import { DashboardPage } from './DashboardPage'
 import { SettingsPage } from './SettingsPage'
 import { TasksPage } from './TasksPage'
 import { UsersPage } from './UsersPage'
+import { type ReportingPeriod } from './dashboardData'
 
 type Page = 'Overview' | 'Tasks' | 'Apps' | 'Chats' | 'Team' | 'Users' | 'Projects' | 'Reports' | 'Settings' | 'Auth'
 type ProjectStatus = 'On track' | 'In review' | 'At risk'
@@ -108,7 +109,45 @@ const team = [
   { name: 'Candice Wu', role: 'Frontend developer', email: 'candice@example.com', initials: 'CW', color: 'rose', status: 'Active' },
 ]
 
-const chartValues = [33, 40, 36, 53, 48, 62, 56, 66, 60, 79, 71, 88]
+const reportSeries = {
+  'Last 7 days': {
+    labels: ['Oct 08', 'Oct 09', 'Oct 10', 'Oct 11', 'Oct 12', 'Oct 13', 'Oct 14'],
+    values: [54, 62, 48, 73, 66, 82, 77],
+  },
+  'Last 30 days': {
+    labels: ['Sep 15', 'Sep 18', 'Sep 21', 'Sep 24', 'Sep 27', 'Sep 30', 'Oct 03', 'Oct 06', 'Oct 09', 'Oct 12', 'Oct 14'],
+    values: [33, 40, 36, 53, 48, 62, 56, 66, 60, 79, 88],
+  },
+  'Last 90 days': {
+    labels: ['Jul 17', 'Jul 25', 'Aug 02', 'Aug 10', 'Aug 18', 'Aug 26', 'Sep 03', 'Sep 11', 'Sep 19', 'Sep 27', 'Oct 05', 'Oct 14'],
+    values: [28, 35, 42, 38, 49, 54, 47, 63, 58, 72, 79, 88],
+  },
+} as const
+const projectStorageKey = 'northstar-dashboard-projects'
+
+function isProject(value: unknown): value is Project {
+  if (typeof value !== 'object' || value === null) return false
+  return 'name' in value && typeof value.name === 'string' &&
+    'category' in value && typeof value.category === 'string' &&
+    'initials' in value && typeof value.initials === 'string' &&
+    'color' in value && typeof value.color === 'string' &&
+    'progress' in value && typeof value.progress === 'number' && value.progress >= 0 && value.progress <= 100 &&
+    'due' in value && typeof value.due === 'string' &&
+    'status' in value && (value.status === 'On track' || value.status === 'In review' || value.status === 'At risk')
+}
+
+function readProjects() {
+  try {
+    const saved = localStorage.getItem(projectStorageKey)
+    if (!saved) return initialProjects
+    const parsed: unknown = JSON.parse(saved)
+    if (Array.isArray(parsed) && parsed.every(isProject)) return parsed
+    throw new Error('Saved project data has an unexpected format.')
+  } catch (error) {
+    console.error('Could not load saved projects.', error)
+    return initialProjects
+  }
+}
 
 function readPreference(key: string, fallback: boolean) {
   try {
@@ -134,11 +173,12 @@ function readVisibleNavigation() {
 
 function App() {
   const [page, setPage] = useState<Page>('Overview')
-  const [projects, setProjects] = useState(initialProjects)
+  const [projects, setProjects] = useState<Project[]>(readProjects)
   const [search, setSearch] = useState('')
-  const [period, setPeriod] = useState('Last 30 days')
+  const [period, setPeriod] = useState<ReportingPeriod>('Last 30 days')
   const [showProjectForm, setShowProjectForm] = useState(false)
   const [projectName, setProjectName] = useState('')
+  const [projectError, setProjectError] = useState('')
   const [notice, setNotice] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -182,29 +222,64 @@ function App() {
   function addProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const name = projectName.trim()
-    if (!name) return
+    if (!name) {
+      setProjectError('Project name cannot be blank.')
+      return
+    }
 
-    setProjects((current) => [
-      {
-        name,
-        category: 'General · Planning',
-        initials: name
-          .split(/\s+/)
-          .slice(0, 2)
-          .map((part) => part[0]?.toUpperCase())
-          .join(''),
-        color: 'blue',
-        progress: 0,
-        due: 'Not scheduled',
-        status: 'On track',
-      },
-      ...current,
-    ])
+    const newProject: Project = {
+      name,
+      category: 'General · Planning',
+      initials: name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join(''),
+      color: 'blue',
+      progress: 0,
+      due: 'Not scheduled',
+      status: 'On track',
+    }
+    const nextProjects = [newProject, ...projects]
+    setProjects(nextProjects)
+    let saved = true
+    try {
+      localStorage.setItem(projectStorageKey, JSON.stringify(nextProjects))
+    } catch (error) {
+      saved = false
+      console.error('Could not save projects to local storage.', error)
+    }
     setProjectName('')
+    setProjectError('')
     setShowProjectForm(false)
     setPage('Projects')
-    setNotice('Your project has been added.')
-    window.setTimeout(() => setNotice(''), 3200)
+    notify(saved
+      ? 'Your project has been added.'
+      : 'Project added for this session, but it could not be saved in this browser.')
+  }
+
+  function closeProjectForm() {
+    setShowProjectForm(false)
+    setProjectName('')
+    setProjectError('')
+  }
+
+  function exportTeamReport() {
+    const currentReport = reportSeries[period]
+    const rows = [
+      ['Date', 'Team activity'],
+      ...currentReport.values.map((value, index) => [currentReport.labels[index], String(value)]),
+    ]
+    const csv = rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'northstar-team-activity-report.csv'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    notify('Team activity report downloaded as CSV.')
   }
 
   return (
@@ -250,7 +325,7 @@ function App() {
           <p>Upgrade your workspace to unlock more projects and insights.</p>
           <button onClick={() => setNotice('Plan options are coming soon.')}>Explore plans <ArrowUpRight size={14} /></button>
         </div>
-        <button className="nav-item help-link" onClick={() => setNotice('Help center is ready for your questions.')}>
+        <button className="nav-item help-link" onClick={() => notify('The help center is a placeholder in this demo.')}>
           <CircleHelp size={18} strokeWidth={1.8} /><span>Help center</span>
         </button>
         <div className="profile">
@@ -284,8 +359,11 @@ function App() {
           {page === 'Overview' && (
             <DashboardPage
               projects={filteredProjects}
+              period={period}
+              onPeriodChange={setPeriod}
               onCreateProject={() => setShowProjectForm(true)}
               onProjects={() => setPage('Projects')}
+              onReports={() => setPage('Reports')}
               onNotify={notify}
             />
           )}
@@ -294,7 +372,7 @@ function App() {
             <>
               <PageHeading title="Projects" subtitle="Plan, track, and ship great work together." action={<button className="primary-button" onClick={() => setShowProjectForm(true)}><Plus size={17} /> New project</button>} />
               <div className="projects-toolbar"><span>{filteredProjects.length} projects</span><button className="subtle-button" onClick={() => setSearch('')}><X size={14} /> Clear search</button></div>
-              <section className="panel projects-panel standalone-panel"><ProjectTable projects={filteredProjects} /></section>
+              <section className="panel projects-panel standalone-panel"><ProjectTable projects={filteredProjects} onNotify={notify} /></section>
             </>
           )}
 
@@ -307,7 +385,7 @@ function App() {
 
           {page === 'Team' && (
             <>
-              <PageHeading title="Team" subtitle="The people making good things happen." action={<button className="primary-button" onClick={() => setNotice('An invitation link is ready to share.')}><Plus size={17} /> Invite people</button>} />
+              <PageHeading title="Team" subtitle="The people making good things happen." action={<button className="primary-button" onClick={() => { setPage('Users'); notify('Add a demo invitation from the Users section. No invitation link is generated.') }}><Plus size={17} /> Invite people</button>} />
               <section className="panel directory-panel">
                 <div className="panel-heading"><div><h2>Workspace members</h2><p>Manage people and their workspace access</p></div><span className="member-count">24 members</span></div>
                 <div className="member-list">
@@ -342,9 +420,9 @@ function App() {
 
           {page === 'Reports' && (
             <>
-              <PageHeading title="Reports" subtitle="A clearer picture of your team’s momentum." action={<button className="secondary-button" onClick={() => setNotice('Your report is ready to export.')}><ArrowDownRight size={16} /> Export report</button>} />
-              <section className="metrics-grid report-metrics"><MetricCard icon={Activity} label="Total activity" value="1,842" change="+18.6% this period" positive /><MetricCard icon={Check} label="Tasks completed" value="186" change="+12% this period" positive /><MetricCard icon={Users} label="Active contributors" value="18" change="75% of your team" positive /><MetricCard icon={Clock3} label="Avg. response time" value="2.4h" change="Down 16% this period" positive /></section>
-              <section className="panel report-panel"><div className="panel-heading"><div><h2>Team activity</h2><p>Daily activity over {period.toLowerCase()}</p></div><label className="select-control compact-select"><select aria-label="Report period" value={period} onChange={(event) => setPeriod(event.target.value)}><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option></select><ChevronDown size={15} /></label></div><div className="report-bars">{chartValues.map((height, index) => <div className="bar-column" key={`${height}-${index}`}><div className="bar-value" style={{ height: `${height}%` }} /><span>{['Sep 15', 'Sep 20', 'Sep 25', 'Sep 30', 'Oct 05', 'Oct 10'][index % 6]}</span></div>)}</div></section>
+              <PageHeading title="Reports" subtitle="A clearer picture of your team’s momentum." action={<button className="secondary-button" onClick={exportTeamReport}><ArrowDownRight size={16} /> Export CSV</button>} />
+              <section className="metrics-grid report-metrics"><MetricCard icon={Activity} label="Total activity" value="1,842" change="+18.6% this period" positive onNotify={notify} /><MetricCard icon={Check} label="Tasks completed" value="186" change="+12% this period" positive onNotify={notify} /><MetricCard icon={Users} label="Active contributors" value="18" change="75% of your team" positive onNotify={notify} /><MetricCard icon={Clock3} label="Avg. response time" value="2.4h" change="Down 16% this period" positive onNotify={notify} /></section>
+              <section className="panel report-panel"><div className="panel-heading"><div><h2>Team activity</h2><p>Daily activity over {period.toLowerCase()}</p></div><label className="select-control compact-select"><select aria-label="Report period" value={period} onChange={(event) => setPeriod(event.target.value as ReportingPeriod)}><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option></select><ChevronDown size={15} /></label></div><div className="report-bars">{reportSeries[period].values.map((height, index) => <div className="bar-column" key={reportSeries[period].labels[index]}><div className="bar-value" style={{ height: `${height}%` }} /><span>{reportSeries[period].labels[index]}</span></div>)}</div></section>
             </>
           )}
 
@@ -370,21 +448,21 @@ function App() {
 
       {menuOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
       {notice && <div className="toast" role="status"><Check size={17} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={15} /></button></div>}
-      {showProjectForm && <div className="modal-scrim" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowProjectForm(false) }}><form className="project-modal" onSubmit={addProject}><button className="icon-button modal-close" type="button" aria-label="Close dialog" onClick={() => setShowProjectForm(false)}><X size={18} /></button><div className="modal-icon"><FolderKanban size={20} /></div><h2>Create a project</h2><p>Start with a name. You can add details and invite people later.</p><label htmlFor="project-name">Project name<input id="project-name" autoFocus required placeholder="e.g. Product launch" value={projectName} onChange={(event) => setProjectName(event.target.value)} /></label><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setShowProjectForm(false)}>Cancel</button><button className="primary-button" type="submit">Create project</button></div></form></div>}
+      {showProjectForm && <div className="modal-scrim" onMouseDown={(event) => { if (event.target === event.currentTarget) closeProjectForm() }}><form className="project-modal" onSubmit={addProject}><button className="icon-button modal-close" type="button" aria-label="Close dialog" onClick={closeProjectForm}><X size={18} /></button><div className="modal-icon"><FolderKanban size={20} /></div><h2>Create a project</h2><p>Start with a name. You can add details and invite people later.</p><label htmlFor="project-name">Project name<input id="project-name" autoFocus required maxLength={100} aria-describedby={projectError ? 'project-name-error' : undefined} placeholder="e.g. Product launch" value={projectName} onChange={(event) => { setProjectName(event.target.value); setProjectError('') }} /></label>{projectError && <p id="project-name-error" className="project-form-error" role="alert">{projectError}</p>}<div className="modal-actions"><button className="secondary-button" type="button" onClick={closeProjectForm}>Cancel</button><button className="primary-button" type="submit">Create project</button></div></form></div>}
     </div>
   )
 }
 
-function MetricCard({ icon: Icon, label, value, change, positive }: { icon: LucideIcon; label: string; value: string; change: string; positive: boolean }) {
-  return <article className="metric-card"><div className="metric-top"><span className="metric-icon"><Icon size={17} strokeWidth={1.8} /></span><button className="icon-button metric-menu" aria-label={`More about ${label}`}><MoreHorizontal size={18} /></button></div><div className="metric-value">{value}</div><div className="metric-label">{label}</div><div className={`metric-change${positive ? ' positive' : ''}`}><ArrowUpRight size={14} />{change}</div></article>
+function MetricCard({ icon: Icon, label, value, change, positive, onNotify }: { icon: LucideIcon; label: string; value: string; change: string; positive: boolean; onNotify: (message: string) => void }) {
+  return <article className="metric-card"><div className="metric-top"><span className="metric-icon"><Icon size={17} strokeWidth={1.8} /></span><button className="icon-button metric-menu" aria-label={`More about ${label}`} onClick={() => onNotify(`${label} is sample data in this demo.`)}><MoreHorizontal size={18} /></button></div><div className="metric-value">{value}</div><div className="metric-label">{label}</div><div className={`metric-change${positive ? ' positive' : ''}`}><ArrowUpRight size={14} />{change}</div></article>
 }
 
 function PageHeading({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return <section className="page-heading simple-heading"><div><div className="eyebrow"><span className="eyebrow-dot" /> NORTHSTAR STUDIO</div><h1>{title}</h1><p className="page-subtitle">{subtitle}</p></div>{action && <div className="heading-actions">{action}</div>}</section>
 }
 
-function ProjectTable({ projects }: { projects: Project[] }) {
-  return <div className="table-scroll"><table className="project-table"><thead><tr><th>PROJECT</th><th>STATUS</th><th>PROGRESS</th><th>DUE DATE</th><th><span className="sr-only">Options</span></th></tr></thead><tbody>{projects.map((project) => <tr key={`${project.name}-${project.due}`}><td><div className="project-name-cell"><div className={`project-avatar ${project.color}`}>{project.initials || 'P'}</div><div><strong>{project.name}</strong><span>{project.category}</span></div></div></td><td><span className={`status status-${project.status.toLowerCase().replace(' ', '-')}`}><i />{project.status}</span></td><td><div className="progress-cell"><div className="progress-track"><span style={{ width: `${project.progress}%` }} /></div><span>{project.progress}%</span></div></td><td className="due-date">{project.due}</td><td><button className="icon-button row-menu" aria-label={`More options for ${project.name}`}><MoreHorizontal size={18} /></button></td></tr>)}{projects.length === 0 && <tr><td colSpan={5}><EmptyState message="No projects match your search." /></td></tr>}</tbody></table></div>
+function ProjectTable({ projects, onNotify }: { projects: Project[]; onNotify: (message: string) => void }) {
+  return <div className="table-scroll"><table className="project-table"><thead><tr><th>PROJECT</th><th>STATUS</th><th>PROGRESS</th><th>DUE DATE</th><th><span className="sr-only">Options</span></th></tr></thead><tbody>{projects.map((project) => <tr key={`${project.name}-${project.due}`}><td><div className="project-name-cell"><div className={`project-avatar ${project.color}`}>{project.initials || 'P'}</div><div><strong>{project.name}</strong><span>{project.category}</span></div></div></td><td><span className={`status status-${project.status.toLowerCase().replace(' ', '-')}`}><i />{project.status}</span></td><td><div className="progress-cell"><div className="progress-track"><span style={{ width: `${project.progress}%` }} /></div><span>{project.progress}%</span></div></td><td className="due-date">{project.due}</td><td><button className="icon-button row-menu" aria-label={`More options for ${project.name}`} onClick={() => onNotify('Additional project actions are not available in this demo.')}><MoreHorizontal size={18} /></button></td></tr>)}{projects.length === 0 && <tr><td colSpan={5}><EmptyState message="No projects match your search." /></td></tr>}</tbody></table></div>
 }
 
 function EmptyState({ message }: { message: string }) {

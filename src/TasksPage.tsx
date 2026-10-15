@@ -12,11 +12,17 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import {
+  readCsvTaskDrafts,
+  taskLabels as labels,
+  taskPriorities as priorities,
+  taskStatuses as statuses,
+  type TaskDraft,
+  type TaskLabel,
+  type TaskPriority,
+  type TaskStatus,
+} from './taskCsv'
 import './TasksPage.css'
-
-type TaskStatus = 'Todo' | 'In progress' | 'Backlog' | 'Done' | 'Canceled'
-type TaskPriority = 'High' | 'Medium' | 'Low'
-type TaskLabel = 'Feature' | 'Bug' | 'Documentation'
 
 type Task = {
   id: string
@@ -26,13 +32,8 @@ type Task = {
   label: TaskLabel
 }
 
-type TaskDraft = Omit<Task, 'id'>
-
 const storageKey = 'northstar-dashboard-tasks'
 const pageSize = 8
-const statuses: TaskStatus[] = ['Todo', 'In progress', 'Backlog', 'Done', 'Canceled']
-const priorities: TaskPriority[] = ['High', 'Medium', 'Low']
-const labels: TaskLabel[] = ['Feature', 'Bug', 'Documentation']
 let taskIdSequence = 0
 
 const starterTasks: Task[] = [
@@ -84,68 +85,6 @@ function readSavedTasks(): Task[] {
   }
 }
 
-function parseCsv(text: string): string[][] {
-  const records: string[][] = []
-  let record: string[] = []
-  let field = ''
-  let quoted = false
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index]
-    if (char === '"') {
-      if (quoted && text[index + 1] === '"') {
-        field += '"'
-        index += 1
-      } else {
-        quoted = !quoted
-      }
-    } else if (char === ',' && !quoted) {
-      record.push(field)
-      field = ''
-    } else if ((char === '\n' || char === '\r') && !quoted) {
-      if (char === '\r' && text[index + 1] === '\n') index += 1
-      record.push(field)
-      if (record.some((value) => value.trim())) records.push(record)
-      record = []
-      field = ''
-    } else {
-      field += char
-    }
-  }
-
-  if (quoted) throw new Error('The CSV contains an unclosed quoted field.')
-  record.push(field)
-  if (record.some((value) => value.trim())) records.push(record)
-  return records
-}
-
-function readCsvTasks(text: string): Task[] {
-  const records = parseCsv(text.replace(/^\uFEFF/, ''))
-  const header = records.shift()?.map((value) => value.trim().toLowerCase())
-  if (!header?.includes('title')) {
-    throw new Error('The CSV must have a "title" column.')
-  }
-
-  const column = (name: string) => header.indexOf(name)
-  return records.map((record, index) => {
-    const lineNumber = index + 2
-    const title = (record[column('title')] ?? '').trim()
-    const rawStatus = (record[column('status')] ?? 'Todo').trim()
-    const rawPriority = (record[column('priority')] ?? 'Medium').trim()
-    const rawLabel = (record[column('label')] ?? 'Feature').trim()
-    const status = statuses.find((value) => value.toLowerCase() === rawStatus.toLowerCase())
-    const priority = priorities.find((value) => value.toLowerCase() === rawPriority.toLowerCase())
-    const label = labels.find((value) => value.toLowerCase() === rawLabel.toLowerCase())
-
-    if (!title) throw new Error(`Row ${lineNumber}: title is required.`)
-    if (!status) throw new Error(`Row ${lineNumber}: unknown status "${rawStatus}".`)
-    if (!priority) throw new Error(`Row ${lineNumber}: unknown priority "${rawPriority}".`)
-    if (!label) throw new Error(`Row ${lineNumber}: unknown label "${rawLabel}".`)
-
-    return { id: createTaskId(), title, status, priority, label }
-  })
-}
-
 function createTaskId(): string {
   const suffix = String(taskIdSequence++).padStart(3, '0')
   return `TASK-${Date.now()}-${suffix}`
@@ -171,6 +110,7 @@ export function TasksPage({
   const [draft, setDraft] = useState<TaskDraft>(blankDraft)
   const [dialog, setDialog] = useState<'task' | 'import' | 'delete' | null>(null)
   const [importError, setImportError] = useState('')
+  const [taskError, setTaskError] = useState('')
 
   useEffect(() => {
     try {
@@ -202,19 +142,24 @@ export function TasksPage({
   function openCreate() {
     setEditingTask(null)
     setDraft(blankDraft)
+    setTaskError('')
     setDialog('task')
   }
 
   function openEdit(task: Task) {
     setEditingTask(task)
     setDraft({ title: task.title, status: task.status, priority: task.priority, label: task.label })
+    setTaskError('')
     setDialog('task')
   }
 
   function saveTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const title = draft.title.trim()
-    if (!title) return
+    if (!title) {
+      setTaskError('Task title cannot be blank.')
+      return
+    }
     if (editingTask) {
       setTasks((current) => current.map((task) => task.id === editingTask.id ? { ...editingTask, ...draft, title } : task))
       onNotify('Task updated.')
@@ -245,7 +190,7 @@ export function TasksPage({
       return
     }
     void file.text().then((text) => {
-      const imported = readCsvTasks(text)
+      const imported = readCsvTaskDrafts(text).map((task) => ({ ...task, id: createTaskId() }))
       if (imported.length === 0) throw new Error('The CSV has a header but no task rows.')
       setTasks((current) => [...imported, ...current])
       setDialog(null)
@@ -262,8 +207,10 @@ export function TasksPage({
     const link = document.createElement('a')
     link.href = url
     link.download = 'northstar-tasks-template.csv'
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(url)
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   return (
@@ -330,7 +277,8 @@ export function TasksPage({
         {dialog === 'task' && <form className="task-modal" onSubmit={saveTask}>
           <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
           <div className="task-modal-icon"><ListTodo size={19} /></div><h2>{editingTask ? 'Edit task' : 'Create a task'}</h2><p>Add a title and choose the task details.</p>
-          <label className="task-form-field">Title<input autoFocus required maxLength={120} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="What needs to be done?" /></label>
+          <label className="task-form-field">Title<input autoFocus required maxLength={120} aria-describedby={taskError ? 'task-title-error' : undefined} value={draft.title} onChange={(event) => { setDraft({ ...draft, title: event.target.value }); setTaskError('') }} placeholder="What needs to be done?" /></label>
+          {taskError && <p id="task-title-error" className="task-import-error" role="alert">{taskError}</p>}
           <div className="task-form-grid">
             <label className="task-form-field">Status<select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as TaskStatus })}>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label>
             <label className="task-form-field">Priority<select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as TaskPriority })}>{priorities.map((priority) => <option key={priority}>{priority}</option>)}</select></label>
