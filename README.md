@@ -2,8 +2,6 @@
 
 A responsive front-end demo for exploring project, team, and workspace analytics. Built with React, TypeScript, and Vite.
 
-This is an independently written demo implementation using fictional sample data. It is not affiliated with or connected to any particular dashboard template or service.
-
 ## Features
 
 - Workspace overview and analytics with revenue, traffic, device, and project summaries
