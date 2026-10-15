@@ -1273,7 +1273,9 @@ h2 {
 
 .project-modal {
   position: relative;
+  display: grid;
   width: min(100%, 410px);
+  gap: 10px;
   padding: 25px;
   border: 1px solid #eeedf2;
   border-radius: 14px;
@@ -1305,14 +1307,14 @@ h2 {
 }
 
 .project-modal > p {
-  margin: 6px 0 20px;
+  margin: -4px 0 7px;
   color: #9291a0;
   font-size: 11px;
   line-height: 1.5;
 }
 
 .project-modal input {
-  margin-bottom: 19px;
+  margin-bottom: 0;
 }
 
 .modal-actions {
@@ -1619,6 +1621,255 @@ h2 {
     bottom: 12px;
     left: 12px;
     justify-content: space-between;
+  }
+}
+
+@media (min-width: 1800px) {
+  .sidebar {
+    width: 280px;
+    padding: 30px 20px 20px;
+  }
+
+  .main-content {
+    margin-left: 280px;
+  }
+
+  .page-content {
+    width: min(100%, 1900px);
+    padding: 48px 60px 76px;
+    zoom: 1.08;
+  }
+
+  .topbar {
+    height: 76px;
+    padding-right: clamp(44px, 4vw, 84px);
+    padding-left: clamp(44px, 4vw, 84px);
+  }
+
+  .breadcrumbs {
+    font-size: 13px;
+  }
+
+  .search-box {
+    width: 280px;
+    height: 40px;
+  }
+
+  .search-box input,
+  .search-box kbd {
+    font-size: 12px;
+  }
+
+  .page-heading {
+    margin-bottom: 30px;
+  }
+
+  .page-heading h1 {
+    font-size: clamp(34px, 2vw, 40px);
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+  }
+
+  .dashboard-tabs {
+    gap: 25px;
+    margin-bottom: 21px;
+  }
+
+  .dashboard-tabs button {
+    padding-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .metrics-grid {
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .metric-card {
+    min-height: 174px;
+    padding: 21px 22px 18px;
+  }
+
+  .metric-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .metric-value {
+    margin-top: 15px;
+    font-size: 30px;
+  }
+
+  .metric-label {
+    font-size: 13px;
+  }
+
+  .metric-change {
+    margin-top: 12px;
+    font-size: 11px;
+  }
+
+  .dashboard-content-grid,
+  .analytics-details-grid {
+    gap: 21px;
+    margin-bottom: 22px;
+  }
+
+  .panel {
+    padding: 23px 25px;
+  }
+
+  .panel-heading h2 {
+    font-size: 15px;
+  }
+
+  .panel-heading p,
+  .summary-caption {
+    font-size: 11px;
+  }
+
+  .subtle-button {
+    min-height: 34px;
+    font-size: 12px;
+  }
+
+  .dashboard-chart-panel,
+  .recent-sales-panel,
+  .traffic-panel,
+  .referrer-panel,
+  .device-panel {
+    min-height: 300px;
+  }
+
+  .revenue-total > strong,
+  .device-total > strong {
+    font-size: 27px;
+  }
+
+  .revenue-bars {
+    height: 180px;
+    margin-top: 13px;
+  }
+
+  .revenue-bar-track {
+    height: 130px;
+    width: min(42px, 65%);
+  }
+
+  .revenue-bar-value,
+  .revenue-month,
+  .sales-person span {
+    font-size: 10px;
+  }
+
+  .sales-row {
+    min-height: 57px;
+    gap: 12px;
+  }
+
+  .sales-row .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
+  }
+
+  .sales-person strong,
+  .sales-amount {
+    font-size: 12px;
+  }
+
+  .project-table th {
+    height: 43px;
+    font-size: 10px;
+  }
+
+  .project-table td {
+    height: 61px;
+    font-size: 11px;
+  }
+
+  .project-name-cell strong {
+    font-size: 12px;
+  }
+
+  .project-name-cell span,
+  .due-date {
+    font-size: 10px;
+  }
+
+  .project-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .traffic-chart {
+    height: 230px;
+  }
+
+  .traffic-y-labels,
+  .traffic-x-labels {
+    font-size: 10px;
+  }
+
+  .source-row,
+  .source-row strong,
+  .device-row,
+  .device-row strong {
+    font-size: 12px;
+  }
+
+  .settings-layout {
+    max-width: 1200px;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 21px;
+  }
+
+  .settings-tabs button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .settings-detail {
+    min-height: 460px;
+    padding: 29px;
+  }
+
+  .settings-detail-heading h2 {
+    font-size: 17px;
+  }
+
+  .settings-detail-heading p,
+  .settings-note,
+  .settings-detail-form > label,
+  .settings-preference-row strong {
+    font-size: 12px;
+  }
+
+  .settings-detail-form input,
+  .settings-detail-form select,
+  .settings-detail-form textarea {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .settings-preference-row {
+    padding: 13px 0;
+  }
+
+  .settings-preference-row span {
+    font-size: 11px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 40px;
+    font-size: 12px;
   }
 }
 
@@ -2155,5 +2406,175 @@ h2 {
 
   .traffic-chart {
     height: 155px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .sidebar .brand {
+    font-size: 22px;
+  }
+
+  .workspace-copy strong,
+  .plan-card strong {
+    font-size: 13px;
+  }
+
+  .workspace-copy small,
+  .plan-card p,
+  .plan-card button,
+  .profile-copy small {
+    font-size: 12px;
+  }
+
+  .nav-label {
+    font-size: 11px;
+  }
+
+  .nav-item {
+    min-height: 46px;
+    font-size: 14px;
+  }
+
+  .dashboard-tabs {
+    gap: 25px;
+    margin-bottom: 21px;
+  }
+
+  .dashboard-tabs button {
+    padding-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .dashboard-content-grid,
+  .analytics-details-grid {
+    gap: 21px;
+    margin-bottom: 22px;
+  }
+
+  .dashboard-chart-panel,
+  .recent-sales-panel,
+  .traffic-panel,
+  .referrer-panel,
+  .device-panel {
+    min-height: 300px;
+  }
+
+  .revenue-total > strong,
+  .device-total > strong {
+    font-size: 27px;
+  }
+
+  .revenue-bars {
+    height: 180px;
+    margin-top: 13px;
+  }
+
+  .revenue-bar-track {
+    width: min(42px, 65%);
+    height: 130px;
+  }
+
+  .revenue-bar-value,
+  .revenue-month,
+  .sales-person span {
+    font-size: 10px;
+  }
+
+  .sales-row {
+    min-height: 57px;
+    gap: 12px;
+  }
+
+  .sales-row .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
+  }
+
+  .sales-person strong,
+  .sales-amount {
+    font-size: 12px;
+  }
+
+  .project-table th {
+    height: 43px;
+    font-size: 10px;
+  }
+
+  .project-table td {
+    height: 61px;
+    font-size: 11px;
+  }
+
+  .project-name-cell strong {
+    font-size: 12px;
+  }
+
+  .project-name-cell span,
+  .due-date {
+    font-size: 10px;
+  }
+
+  .project-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .traffic-chart {
+    height: 230px;
+  }
+
+  .traffic-y-labels,
+  .traffic-x-labels {
+    font-size: 10px;
+  }
+
+  .source-row,
+  .source-row strong,
+  .device-row,
+  .device-row strong {
+    font-size: 12px;
+  }
+
+  .settings-layout {
+    max-width: 1200px;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 21px;
+  }
+
+  .settings-tabs button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .settings-detail {
+    min-height: 460px;
+    padding: 29px;
+  }
+
+  .settings-detail-heading h2 {
+    font-size: 17px;
+  }
+
+  .settings-detail-heading p,
+  .settings-note,
+  .settings-detail-form > label,
+  .settings-preference-row strong {
+    font-size: 12px;
+  }
+
+  .settings-detail-form input,
+  .settings-detail-form select,
+  .settings-detail-form textarea {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .settings-preference-row {
+    padding: 13px 0;
+  }
+
+  .settings-preference-row span {
+    font-size: 11px;
   }
 }
