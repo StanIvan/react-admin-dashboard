@@ -1323,6 +1323,11 @@ h2 {
   gap: 8px;
 }
 
+.project-form-error {
+  color: #b34e53;
+  font-size: 11px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1625,6 +1630,31 @@ h2 {
 }
 
 @media (min-width: 1800px) {
+  .sidebar .brand {
+    font-size: 22px;
+  }
+
+  .workspace-copy strong,
+  .plan-card strong {
+    font-size: 13px;
+  }
+
+  .workspace-copy small,
+  .plan-card p,
+  .plan-card button,
+  .profile-copy small {
+    font-size: 12px;
+  }
+
+  .nav-label {
+    font-size: 11px;
+  }
+
+  .nav-item {
+    min-height: 46px;
+    font-size: 14px;
+  }
+
   .sidebar {
     width: 280px;
     padding: 30px 20px 20px;
@@ -1637,7 +1667,6 @@ h2 {
   .page-content {
     width: min(100%, 1900px);
     padding: 48px 60px 76px;
-    zoom: 1.08;
   }
 
   .topbar {
@@ -1949,14 +1978,16 @@ h2 {
   display: flex;
   height: 148px;
   justify-content: space-around;
-  gap: 15px;
+  gap: 8px;
   margin-top: 8px;
-  padding: 0 4px;
+  padding: 8px 4px 0;
+  border-bottom: 1px solid #efedf5;
+  background-image: repeating-linear-gradient(to top, transparent 0, transparent 34px, #f1eff7 35px);
 }
 
 .revenue-bar-column {
   display: flex;
-  min-width: 20px;
+  min-width: 0;
   flex: 1;
   flex-direction: column;
   align-items: center;
@@ -1967,12 +1998,17 @@ h2 {
 .revenue-bar-value,
 .revenue-month {
   color: #9a99a7;
-  font-size: 9px;
+  font-size: 10px;
+}
+
+.revenue-bar-value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .revenue-bar-track {
   display: flex;
-  width: min(34px, 65%);
+  width: min(38px, 72%);
   height: 105px;
   align-items: flex-end;
   overflow: hidden;
@@ -1985,6 +2021,30 @@ h2 {
   width: 100%;
   border-radius: 5px 5px 0 0;
   background: linear-gradient(180deg, #968be9, #7469db);
+  transition: height 280ms ease, filter 180ms ease;
+}
+
+.revenue-bar-column:hover .revenue-bar-track span {
+  filter: brightness(1.1);
+}
+
+.revenue-bar-column:hover .revenue-month {
+  color: #5d53bc;
+  font-weight: 600;
+}
+
+.revenue-bar-column.is-current .revenue-bar-track {
+  background: #e8e4ff;
+}
+
+.revenue-bar-column.is-current .revenue-bar-track span {
+  background: linear-gradient(180deg, #7669e4, #5144c2);
+  box-shadow: 0 3px 12px #7469db38;
+}
+
+.revenue-bar-column.is-current .revenue-month {
+  color: #5d53bc;
+  font-weight: 600;
 }
 
 .sales-list {
@@ -2410,31 +2470,6 @@ h2 {
 }
 
 @media (min-width: 1800px) {
-  .sidebar .brand {
-    font-size: 22px;
-  }
-
-  .workspace-copy strong,
-  .plan-card strong {
-    font-size: 13px;
-  }
-
-  .workspace-copy small,
-  .plan-card p,
-  .plan-card button,
-  .profile-copy small {
-    font-size: 12px;
-  }
-
-  .nav-label {
-    font-size: 11px;
-  }
-
-  .nav-item {
-    min-height: 46px;
-    font-size: 14px;
-  }
-
   .dashboard-tabs {
     gap: 25px;
     margin-bottom: 21px;
@@ -2494,30 +2529,6 @@ h2 {
   .sales-person strong,
   .sales-amount {
     font-size: 12px;
-  }
-
-  .project-table th {
-    height: 43px;
-    font-size: 10px;
-  }
-
-  .project-table td {
-    height: 61px;
-    font-size: 11px;
-  }
-
-  .project-name-cell strong {
-    font-size: 12px;
-  }
-
-  .project-name-cell span,
-  .due-date {
-    font-size: 10px;
-  }
-
-  .project-avatar {
-    width: 38px;
-    height: 38px;
   }
 
   .traffic-chart {
