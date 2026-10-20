@@ -6,6 +6,47 @@ test.beforeEach(async ({ page }) => {
   await page.reload()
 })
 
+test('opens workspace search with Ctrl+K and Command+K without stealing text input', async ({ page }) => {
+  const search = page.getByRole('textbox', { name: 'Search workspace' })
+
+  await page.getByRole('button', { name: 'Notifications' }).focus()
+  await page.keyboard.press('Control+k')
+  await expect(search).toBeFocused()
+
+  await page.getByRole('button', { name: 'Notifications' }).click()
+  await page.keyboard.press('Meta+k')
+  await expect(search).toBeFocused()
+
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click()
+  await page.getByRole('button', { name: 'New task' }).click()
+  const title = page.getByLabel('Title')
+  await title.focus()
+  await page.keyboard.press('Control+k')
+  await expect(title).toBeFocused()
+  await page.keyboard.type('Typing stays in the task form')
+  await expect(title).toHaveValue('Typing stays in the task form')
+})
+
+test('mobile search opens with focus and closes on Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const search = page.getByRole('textbox', { name: 'Search workspace' })
+  const toggle = page.getByRole('button', { name: 'Toggle search' })
+
+  await toggle.click()
+  await expect(search).toBeVisible()
+  await expect(search).toBeFocused()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+  await page.keyboard.press('Escape')
+  await expect(search).toBeHidden()
+  await expect(toggle).toBeFocused()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await page.keyboard.press('Control+k')
+  await expect(search).toBeVisible()
+  await expect(search).toBeFocused()
+})
+
 test('creates a task and keeps it after reload', async ({ page }) => {
   await page.getByRole('button', { name: 'Tasks', exact: true }).click()
   await page.getByRole('button', { name: 'New task' }).click()

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Activity,
   ArrowDownRight,
@@ -182,9 +182,38 @@ function App() {
   const [notice, setNotice] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const mobileSearchToggleRef = useRef<HTMLButtonElement>(null)
   const [darkMode, setDarkMode] = useState(() => readPreference('darkMode', false))
   const [weeklySummary, setWeeklySummary] = useState(() => readPreference('weeklySummary', true))
   const [visibleNavigation, setVisibleNavigation] = useState<string[]>(readVisibleNavigation)
+
+  useEffect(() => {
+    if (page === 'Auth') return
+
+    function handleSearchKeys(event: KeyboardEvent) {
+      const target = event.target
+      const isEditingText = target instanceof HTMLElement &&
+        (target.isContentEditable || target.closest('input, textarea, [contenteditable="true"], [contenteditable=""]') !== null)
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !event.altKey && !event.shiftKey && !isEditingText) {
+        event.preventDefault()
+        if (searchOpen) searchInputRef.current?.focus()
+        else setSearchOpen(true)
+      } else if (event.key === 'Escape' && searchOpen && window.matchMedia('(max-width: 680px)').matches) {
+        setSearchOpen(false)
+        mobileSearchToggleRef.current?.focus()
+      }
+    }
+
+    window.addEventListener('keydown', handleSearchKeys)
+    return () => window.removeEventListener('keydown', handleSearchKeys)
+  }, [page, searchOpen])
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus()
+  }, [searchOpen])
+
   const notify = useCallback((message: string) => {
     setNotice(message)
     window.setTimeout(() => setNotice(''), 3200)
@@ -342,10 +371,10 @@ function App() {
           <button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20} /></button>
           <div className="breadcrumbs"><span>Workspace</span><span className="crumb-divider">/</span><strong>{page}</strong></div>
           <div className="topbar-actions">
-            <button className="icon-button mobile-search-toggle" aria-label="Toggle search" onClick={() => setSearchOpen((current) => !current)}><Search size={18} /></button>
+            <button ref={mobileSearchToggleRef} className="icon-button mobile-search-toggle" aria-label="Toggle search" aria-expanded={searchOpen} aria-controls="workspace-search" onClick={() => setSearchOpen((current) => !current)}><Search size={18} /></button>
             <label className={`search-box${searchOpen ? ' search-open' : ''}`}>
               <Search size={17} />
-              <input aria-label="Search workspace" placeholder="Search anything..." value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') setSearchOpen(false) }} />
+              <input ref={searchInputRef} id="workspace-search" aria-label="Search workspace" placeholder="Search anything..." value={search} onChange={(event) => setSearch(event.target.value)} />
               <kbd>⌘ K</kbd>
             </label>
             <button className="icon-button notification-button" aria-label="Notifications" onClick={() => setNotice('You are all caught up.')}>
