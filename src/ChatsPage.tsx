@@ -131,6 +131,7 @@ export function ChatsPage({ onNotify }: { onNotify: (message: string) => void })
       ? { ...conversation, messages: [...conversation.messages, message], unread: 0 }
       : conversation))
     setMessageDraft('')
+    onNotify('Message saved in this browser.')
   }
 
   function startConversation(contact: (typeof contacts)[number]) {
@@ -159,14 +160,14 @@ export function ChatsPage({ onNotify }: { onNotify: (message: string) => void })
               {conversation.unread > 0 && <span className="chat-unread">{conversation.unread}</span>}
             </button>
           })}
-          {filteredConversations.length === 0 && <div className="chat-list-empty">No conversations found.</div>}
+          {filteredConversations.length === 0 && <div className="chat-list-empty"><span>No conversations match your search.</span><button type="button" onClick={() => setSearch('')}>Clear search</button></div>}
         </div>
       </aside>
 
       <div className="chat-thread">
         {selected ? <>
           <header className="chat-thread-header"><button className="chat-back-button" aria-label="Back to conversations" onClick={() => setSelectedId(null)}><ArrowLeft size={18} /></button><span className={`chat-avatar chat-avatar-${selected.name.charCodeAt(0) % 5}`}>{initials(selected.name)}<i /></span><div className="chat-thread-person"><strong>{selected.name}</strong><span>{selected.role}</span></div><span className="chat-local-badge"><Check size={12} /> Local chat</span></header>
-          <div className="chat-message-list">
+          <div className="chat-message-list" role="log" aria-label={`Messages with ${selected.name}`} aria-live="polite">
             {selected.messages.length === 0 ? <div className="chat-first-message"><span className="chat-first-icon"><MessageCircle size={20} /></span><strong>Start a conversation with {selected.name.split(' ')[0]}</strong><span>Messages are saved in this browser only.</span></div> : selected.messages.map((message, index) => {
               const previous = selected.messages[index - 1]
               const showDate = !previous || formatDay(previous.sentAt) !== formatDay(message.sentAt)
@@ -177,7 +178,7 @@ export function ChatsPage({ onNotify }: { onNotify: (message: string) => void })
         </> : <div className="chat-welcome"><span className="chat-welcome-icon"><Users size={24} /></span><h2>Your team inbox</h2><p>Select a conversation to read messages, or start a new one with a teammate.</p><button className="task-primary-button" onClick={() => setDialogOpen(true)}><Plus size={15} /> New message</button></div>}
       </div>
 
-      {dialogOpen && <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false) }}><div className="task-modal chat-recipient-modal"><button className="task-modal-close" aria-label="Close dialog" onClick={() => setDialogOpen(false)}><X size={17} /></button><div className="task-modal-icon"><MessageCircle size={19} /></div><h2>New conversation</h2><p>Choose a teammate to open a private local chat.</p><label className="task-form-field">Search teammates<input autoFocus aria-label="Search teammates" value={recipientQuery} onChange={(event) => setRecipientQuery(event.target.value)} placeholder="Name or role..." /></label><div className="chat-recipient-list">{matchingContacts.map((contact) => <button key={contact.id} onClick={() => startConversation(contact)}><span className={`chat-avatar chat-avatar-${contact.name.charCodeAt(0) % 5}`}>{initials(contact.name)}</span><span><strong>{contact.name}</strong><small>{contact.role}</small></span></button>)}{matchingContacts.length === 0 && <span className="chat-no-recipients">No new teammates found.</span>}</div></div></div>}
+      {dialogOpen && <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false) }}><div className="task-modal chat-recipient-modal" role="dialog" aria-modal="true" aria-labelledby="chat-recipient-title"><button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialogOpen(false)}><X size={17} /></button><div className="task-modal-icon"><MessageCircle size={19} /></div><h2 id="chat-recipient-title">New conversation</h2><p>Choose a teammate to open a private local chat.</p><label className="task-form-field">Search teammates<input autoFocus aria-label="Search teammates" value={recipientQuery} onChange={(event) => setRecipientQuery(event.target.value)} placeholder="Name or role..." /></label><div className="chat-recipient-list">{matchingContacts.map((contact) => <button type="button" key={contact.id} onClick={() => startConversation(contact)}><span className={`chat-avatar chat-avatar-${contact.name.charCodeAt(0) % 5}`}>{initials(contact.name)}</span><span><strong>{contact.name}</strong><small>{contact.role}</small></span></button>)}{matchingContacts.length === 0 && <div className="chat-no-recipients"><span>{recipientQuery.trim() ? 'No new teammates match your search.' : 'You have started conversations with everyone on the team.'}</span>{recipientQuery.trim() && <button type="button" onClick={() => setRecipientQuery('')}>Clear search</button>}</div>}</div></div></div>}
     </section>
   )
 }

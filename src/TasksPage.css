@@ -481,8 +481,16 @@
   margin-top: 5px;
 }
 
-.task-import-error {
+.task-import-error,
+.task-import-status {
   margin-top: -6px !important;
+}
+
+.task-import-status {
+  color: #777687 !important;
+}
+
+.task-import-error {
   color: #ae514b !important;
 }
 

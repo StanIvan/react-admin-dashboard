@@ -103,13 +103,15 @@ export function TasksPage({
   const [statusFilter, setStatusFilter] = useState('All statuses')
   const [priorityFilter, setPriorityFilter] = useState('All priorities')
   const [sort, setSort] = useState('Newest first')
-  const [page, setPage] = useState(1)
+  const pageFilterKey = JSON.stringify([search, statusFilter, priorityFilter, sort])
+  const [pageState, setPageState] = useState({ filterKey: pageFilterKey, page: 1 })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([])
   const [draft, setDraft] = useState<TaskDraft>(blankDraft)
   const [dialog, setDialog] = useState<'task' | 'import' | 'delete' | null>(null)
   const [importError, setImportError] = useState('')
+  const [importing, setImporting] = useState(false)
   const [taskError, setTaskError] = useState('')
 
   useEffect(() => {
@@ -134,10 +136,22 @@ export function TasksPage({
       })
   }, [tasks, search, statusFilter, priorityFilter, sort])
 
+  if (pageState.filterKey !== pageFilterKey) {
+    setPageState({ filterKey: pageFilterKey, page: 1 })
+  }
   const pageCount = Math.max(1, Math.ceil(filteredTasks.length / pageSize))
-  const currentPage = Math.min(page, pageCount)
+  const currentPage = Math.min(pageState.page, pageCount)
   const visibleTasks = filteredTasks.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const allVisibleSelected = visibleTasks.length > 0 && visibleTasks.every((task) => selectedIds.includes(task.id))
+
+  function setPage(nextPage: number | ((current: number) => number)) {
+    setPageState((current) => ({
+      filterKey: pageFilterKey,
+      page: typeof nextPage === 'function'
+        ? nextPage(current.filterKey === pageFilterKey ? current.page : 1)
+        : nextPage,
+    }))
+  }
 
   function openCreate() {
     setEditingTask(null)
@@ -182,23 +196,29 @@ export function TasksPage({
     setSelectedIds((current) => current.includes(id) ? current.filter((selected) => selected !== id) : [...current, id])
   }
 
-  function importFile(file: File | undefined) {
+  async function importFile(file: File | undefined) {
     if (!file) return
     setImportError('')
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setImportError('Choose a .csv file to import tasks.')
       return
     }
-    void file.text().then((text) => {
+
+    setImporting(true)
+    try {
+      const text = await file.text()
       const imported = readCsvTaskDrafts(text).map((task) => ({ ...task, id: createTaskId() }))
       if (imported.length === 0) throw new Error('The CSV has a header but no task rows.')
       setTasks((current) => [...imported, ...current])
+      setPage(1)
       setDialog(null)
       onNotify(`${imported.length} tasks imported.`)
-    }).catch((error: unknown) => {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'The CSV could not be read.'
       setImportError(message)
-    })
+    } finally {
+      setImporting(false)
+    }
   }
 
   function downloadTemplate() {
@@ -266,7 +286,7 @@ export function TasksPage({
                 <td><span className={`task-label task-label-${task.label.toLowerCase()}`}>{task.label}</span></td>
                 <td><div className="task-row-actions"><button aria-label={`Edit ${task.title}`} onClick={() => openEdit(task)}>Edit</button><button aria-label={`Duplicate ${task.title}`} onClick={() => { setTasks((current) => [{ ...task, id: createTaskId(), title: `${task.title} (copy)` }, ...current]); setPage(1); onNotify('Task duplicated.') }}><Copy size={14} /></button><button aria-label={`Delete ${task.title}`} onClick={() => { setPendingDeleteIds([task.id]); setDialog('delete') }}><Trash2 size={14} /></button></div></td>
               </tr>)}
-              {visibleTasks.length === 0 && <tr><td colSpan={6}><div className="task-empty"><Search size={18} /><span>No tasks match these filters.</span><button onClick={() => { onSearchChange(''); setStatusFilter('All statuses'); setPriorityFilter('All priorities') }}>Clear filters</button></div></td></tr>}
+              {visibleTasks.length === 0 && <tr><td colSpan={6}><div className="task-empty"><Search size={18} />{tasks.length === 0 ? <><span>No tasks yet. Create a task to get started.</span><button onClick={openCreate}>Create a task</button></> : <><span>No tasks match these filters.</span><button onClick={() => { onSearchChange(''); setStatusFilter('All statuses'); setPriorityFilter('All priorities') }}>Clear filters</button></>}</div></td></tr>}
             </tbody>
           </table>
         </div>
@@ -274,9 +294,9 @@ export function TasksPage({
       </div>
 
       {dialog && <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialog(null) }}>
-        {dialog === 'task' && <form className="task-modal" onSubmit={saveTask}>
+        {dialog === 'task' && <form className="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-dialog-title" onSubmit={saveTask}>
           <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
-          <div className="task-modal-icon"><ListTodo size={19} /></div><h2>{editingTask ? 'Edit task' : 'Create a task'}</h2><p>Add a title and choose the task details.</p>
+          <div className="task-modal-icon"><ListTodo size={19} /></div><h2 id="task-dialog-title">{editingTask ? 'Edit task' : 'Create a task'}</h2><p>Add a title and choose the task details.</p>
           <label className="task-form-field">Title<input autoFocus required maxLength={120} aria-describedby={taskError ? 'task-title-error' : undefined} value={draft.title} onChange={(event) => { setDraft({ ...draft, title: event.target.value }); setTaskError('') }} placeholder="What needs to be done?" /></label>
           {taskError && <p id="task-title-error" className="task-import-error" role="alert">{taskError}</p>}
           <div className="task-form-grid">
@@ -287,18 +307,19 @@ export function TasksPage({
           <div className="task-modal-actions"><button className="task-secondary-button" type="button" onClick={() => setDialog(null)}>Cancel</button><button className="task-primary-button" type="submit"><Check size={15} />{editingTask ? 'Save task' : 'Create task'}</button></div>
         </form>}
 
-        {dialog === 'import' && <div className="task-modal">
-          <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
-          <div className="task-modal-icon"><ArrowDownToLine size={19} /></div><h2>Import tasks</h2><p>Choose a CSV file. Required column: <code>title</code>. Optional: <code>status</code>, <code>priority</code>, <code>label</code>.</p>
-          <label className="task-form-field">CSV file<input type="file" accept=".csv,text/csv" onChange={(event) => importFile(event.target.files?.[0])} /></label>
+        {dialog === 'import' && <div className="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-import-title">
+          <button className="task-modal-close" type="button" aria-label="Close dialog" disabled={importing} onClick={() => setDialog(null)}><X size={17} /></button>
+          <div className="task-modal-icon"><ArrowDownToLine size={19} /></div><h2 id="task-import-title">Import tasks</h2><p>Choose a CSV file. Required column: <code>title</code>. Optional: <code>status</code>, <code>priority</code>, <code>label</code>.</p>
+          <label className="task-form-field">CSV file<input type="file" accept=".csv,text/csv" disabled={importing} onChange={(event) => { void importFile(event.currentTarget.files?.[0]); event.currentTarget.value = '' }} /></label>
+          {importing && <p className="task-import-status" role="status">Reading CSV file…</p>}
           {importError && <p className="task-import-error" role="alert">{importError}</p>}
-          <button className="task-template-button" onClick={downloadTemplate}><ArrowDownToLine size={14} /> Download CSV template</button>
-          <div className="task-modal-actions"><button className="task-secondary-button" onClick={() => setDialog(null)}>Close</button></div>
+          <button className="task-template-button" type="button" disabled={importing} onClick={downloadTemplate}><ArrowDownToLine size={14} /> Download CSV template</button>
+          <div className="task-modal-actions"><button className="task-secondary-button" type="button" disabled={importing} onClick={() => setDialog(null)}>Close</button></div>
         </div>}
 
-        {dialog === 'delete' && <div className="task-modal">
+        {dialog === 'delete' && <div className="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-delete-title">
           <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
-          <div className="task-modal-icon task-delete-icon"><Trash2 size={19} /></div><h2>Delete {pendingDeleteIds.length === 1 ? 'task' : 'tasks'}?</h2><p>This will permanently remove {pendingDeleteIds.length} {pendingDeleteIds.length === 1 ? 'task' : 'tasks'} from this browser.</p>
+          <div className="task-modal-icon task-delete-icon"><Trash2 size={19} /></div><h2 id="task-delete-title">Delete {pendingDeleteIds.length === 1 ? 'task' : 'tasks'}?</h2><p>This will permanently remove {pendingDeleteIds.length} {pendingDeleteIds.length === 1 ? 'task' : 'tasks'} from this browser.</p>
           <div className="task-modal-actions"><button className="task-secondary-button" onClick={() => setDialog(null)}>Cancel</button><button className="task-danger-button" onClick={() => deleteTasks(pendingDeleteIds)}>Delete</button></div>
         </div>}
       </div>}

@@ -88,7 +88,8 @@ export function UsersPage({
   const [users, setUsers] = useState(loadUsers)
   const [roleFilter, setRoleFilter] = useState('All roles')
   const [statusFilter, setStatusFilter] = useState('All statuses')
-  const [page, setPage] = useState(1)
+  const pageFilterKey = JSON.stringify([search, roleFilter, statusFilter])
+  const [pageState, setPageState] = useState({ filterKey: pageFilterKey, page: 1 })
   const [selectedEmails, setSelectedEmails] = useState<string[]>([])
   const [dialog, setDialog] = useState<'invite' | 'edit' | 'delete' | null>(null)
   const [currentEmail, setCurrentEmail] = useState('')
@@ -116,12 +117,24 @@ export function UsersPage({
       .sort((first, second) => first.name.localeCompare(second.name))
   }, [users, search, roleFilter, statusFilter])
 
+  if (pageState.filterKey !== pageFilterKey) {
+    setPageState({ filterKey: pageFilterKey, page: 1 })
+  }
   const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize))
-  const currentPage = Math.min(page, pageCount)
+  const currentPage = Math.min(pageState.page, pageCount)
   const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const allVisibleSelected = visibleUsers.length > 0 && visibleUsers.every((user) => selectedEmails.includes(user.email))
   const activeCount = users.filter((user) => user.status === 'Active').length
   const invitedCount = users.filter((user) => user.status === 'Invited').length
+
+  function setPage(nextPage: number | ((current: number) => number)) {
+    setPageState((current) => ({
+      filterKey: pageFilterKey,
+      page: typeof nextPage === 'function'
+        ? nextPage(current.filterKey === pageFilterKey ? current.page : 1)
+        : nextPage,
+    }))
+  }
 
   function openInvite() {
     setName('')
@@ -152,7 +165,7 @@ export function UsersPage({
       setFormError('Email address is required.')
       return
     }
-    if (users.some((user) => user.email.toLowerCase() === normalizedEmail && user.email !== currentEmail)) {
+    if (users.some((user) => user.email.toLowerCase() === normalizedEmail && user.email.toLowerCase() !== currentEmail.toLowerCase())) {
       setFormError('A user with this email address already exists.')
       return
     }
@@ -209,7 +222,7 @@ export function UsersPage({
                 <td><span className={`user-status user-status-${user.status.toLowerCase()}`}><i />{user.status}</span></td>
                 <td><div className="user-actions"><button aria-label={`Edit ${user.name}`} onClick={() => openEdit(user)}>Edit</button>{user.status === 'Invited' && <button aria-label={`Resend invitation to ${user.name}`} onClick={() => onNotify(`Invitation for ${user.email} is ready to resend.`)}><MailPlus size={14} /></button>}<button aria-label={`Remove ${user.name}`} onClick={() => { setPendingDelete([user.email]); setDialog('delete') }}><Trash2 size={14} /></button></div></td>
               </tr>)}
-              {visibleUsers.length === 0 && <tr><td colSpan={5}><div className="users-empty"><Search size={18} /><span>No users match these filters.</span><button onClick={() => { onSearchChange(''); setRoleFilter('All roles'); setStatusFilter('All statuses') }}>Clear filters</button></div></td></tr>}
+              {visibleUsers.length === 0 && <tr><td colSpan={5}><div className="users-empty"><Search size={18} />{users.length === 0 ? <><span>No workspace users yet. Invite a teammate to get started.</span><button onClick={openInvite}>Invite a user</button></> : <><span>No users match these filters.</span><button onClick={() => { onSearchChange(''); setRoleFilter('All roles'); setStatusFilter('All statuses') }}>Clear filters</button></>}</div></td></tr>}
             </tbody>
           </table>
         </div>
@@ -217,16 +230,16 @@ export function UsersPage({
       </div>
 
       {dialog && <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialog(null) }}>
-        {(dialog === 'invite' || dialog === 'edit') && <form className="task-modal" onSubmit={saveUser}>
+        {(dialog === 'invite' || dialog === 'edit') && <form className="task-modal" role="dialog" aria-modal="true" aria-labelledby="user-dialog-title" onSubmit={saveUser}>
           <button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button>
-          <div className="task-modal-icon"><UserPlus size={19} /></div><h2>{dialog === 'edit' ? 'Edit user' : 'Invite a user'}</h2><p>{dialog === 'edit' ? 'Update this user’s workspace details and role.' : 'Add a teammate to your workspace.'}</p>
+          <div className="task-modal-icon"><UserPlus size={19} /></div><h2 id="user-dialog-title">{dialog === 'edit' ? 'Edit user' : 'Invite a user'}</h2><p>{dialog === 'edit' ? 'Update this user’s workspace details and role.' : 'Add a teammate to your workspace.'}</p>
           <label className="task-form-field">Full name<input required autoFocus maxLength={80} value={name} onChange={(event) => { setName(event.target.value); setFormError('') }} placeholder="e.g. Jordan Lee" /></label>
           <label className="task-form-field">Email address<input required type="email" value={email} onChange={(event) => { setEmail(event.target.value); setFormError('') }} placeholder="name@example.com" /></label>
           <label className="task-form-field">Role<select value={role} onChange={(event) => setRole(event.target.value as UserRole)}>{roles.map((item) => <option key={item}>{item}</option>)}</select></label>
           {formError && <p className="users-form-error" role="alert">{formError}</p>}
           <div className="task-modal-actions"><button className="task-secondary-button" type="button" onClick={() => setDialog(null)}>Cancel</button><button className="task-primary-button" type="submit">{dialog === 'edit' ? 'Save changes' : 'Add invitation'}</button></div>
         </form>}
-        {dialog === 'delete' && <div className="task-modal"><button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button><div className="task-modal-icon task-delete-icon"><Trash2 size={19} /></div><h2>Remove {pendingDelete.length === 1 ? 'user' : 'users'}?</h2><p>This will remove {pendingDelete.length} {pendingDelete.length === 1 ? 'user' : 'users'} from this workspace.</p><div className="task-modal-actions"><button className="task-secondary-button" onClick={() => setDialog(null)}>Cancel</button><button className="task-danger-button" onClick={() => deleteUsers(pendingDelete)}>Remove</button></div></div>}
+        {dialog === 'delete' && <div className="task-modal" role="dialog" aria-modal="true" aria-labelledby="user-delete-title"><button className="task-modal-close" type="button" aria-label="Close dialog" onClick={() => setDialog(null)}><X size={17} /></button><div className="task-modal-icon task-delete-icon"><Trash2 size={19} /></div><h2 id="user-delete-title">Remove {pendingDelete.length === 1 ? 'user' : 'users'}?</h2><p>This will remove {pendingDelete.length} {pendingDelete.length === 1 ? 'user' : 'users'} from this workspace.</p><div className="task-modal-actions"><button className="task-secondary-button" type="button" onClick={() => setDialog(null)}>Cancel</button><button className="task-danger-button" type="button" onClick={() => deleteUsers(pendingDelete)}>Remove</button></div></div>}
       </div>}
     </section>
   )

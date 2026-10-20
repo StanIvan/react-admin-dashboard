@@ -113,7 +113,7 @@ export function AppsPage({
         const Icon = app.icon
         const connected = connectedApps.includes(app.name)
         return <article className="integration-card" key={app.name}>
-          <div className="integration-card-top"><span className={`integration-icon integration-icon-${app.tone}`}><Icon size={20} strokeWidth={1.8} /></span><button className={`integration-button${connected ? ' is-connected' : ''}`} onClick={() => toggleConnection(app)}>{connected && <Check size={13} />}{connected ? 'Connected' : 'Connect'}</button></div>
+          <div className="integration-card-top"><span className={`integration-icon integration-icon-${app.tone}`}><Icon size={20} strokeWidth={1.8} /></span><button className={`integration-button${connected ? ' is-connected' : ''}`} aria-pressed={connected} onClick={() => toggleConnection(app)}>{connected && <Check size={13} />}{connected ? 'Connected' : 'Connect'}</button></div>
           <span className="integration-category">{app.category}</span>
           <h2>{app.name}</h2>
           <p>{app.description}</p>

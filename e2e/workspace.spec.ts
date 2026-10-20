@@ -103,3 +103,88 @@ test('updates Overview metrics, revenue chart, and export for each period', asyn
   await page.getByRole('button', { name: 'Overview', exact: true }).click()
   await expect(page.getByLabel('Reporting period')).toHaveValue('Last 90 days')
 })
+
+test('reports invalid task CSV rows and imports a valid file', async ({ page }) => {
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click()
+  await page.getByRole('button', { name: 'Import CSV' }).click()
+  const fileInput = page.getByLabel('CSV file')
+
+  await fileInput.setInputFiles({
+    name: 'invalid-tasks.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('title,status\nImported task,Unknown'),
+  })
+  await expect(page.getByRole('alert')).toHaveText('Row 2: unknown status "Unknown".')
+  await expect(page.getByRole('button', { name: 'Close', exact: true })).toBeEnabled()
+
+  await fileInput.setInputFiles({
+    name: 'valid-tasks.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('title,status\nImported task,Todo'),
+  })
+  await expect(page.getByRole('dialog')).toBeHidden()
+  await expect(page.getByText('Imported task', { exact: true })).toBeVisible()
+  await expect(page.getByRole('status')).toContainText('1 tasks imported.')
+})
+
+test('returns task and user lists to page one when filters change', async ({ page }) => {
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click()
+  await page.getByRole('button', { name: 'Next page' }).click()
+  await expect(page.getByText('Page 2 of 2')).toBeVisible()
+  await page.getByLabel('Filter tasks by status').selectOption('Done')
+  await expect(page.getByText('Page 1 of 1')).toBeVisible()
+  await page.getByLabel('Filter tasks by status').selectOption('All statuses')
+  await expect(page.getByText('Page 1 of 2')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Users', exact: true }).click()
+  await page.getByRole('button', { name: 'Next users page' }).click()
+  await expect(page.getByText('Page 2 of 2')).toBeVisible()
+  await page.getByLabel('Filter users by status').selectOption('Invited')
+  await expect(page.getByText('Page 1 of 1')).toBeVisible()
+  await page.getByLabel('Filter users by status').selectOption('All statuses')
+  await expect(page.getByText('Page 1 of 2')).toBeVisible()
+})
+
+test('validates duplicate invitations and adds a local invitation', async ({ page }) => {
+  await page.getByRole('button', { name: 'Users', exact: true }).click()
+  await page.getByRole('button', { name: 'Invite user' }).click()
+  await page.getByLabel('Full name').fill('Jordan Demo')
+  const email = page.getByLabel('Email address')
+  await email.fill('olivia@example.com')
+  await page.getByRole('button', { name: 'Add invitation' }).click()
+  await expect(page.getByRole('alert')).toHaveText('A user with this email address already exists.')
+
+  await email.fill('jordan@example.com')
+  await page.getByRole('button', { name: 'Add invitation' }).click()
+  await expect(page.getByText('jordan@example.com')).toBeVisible()
+  await expect(page.getByRole('status')).toContainText('Invitation added.')
+})
+
+test('saves integration changes locally and restores them after reload', async ({ page }) => {
+  await page.getByRole('button', { name: 'Apps', exact: true }).click()
+  const chatline = page.locator('.integration-card').filter({ has: page.getByRole('heading', { name: 'Chatline' }) })
+  const connectButton = chatline.getByRole('button')
+
+  await expect(connectButton).toHaveAttribute('aria-pressed', 'false')
+  await connectButton.click()
+  await expect(connectButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('status')).toContainText('marked connected in this demo')
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Apps', exact: true }).click()
+  await expect(page.locator('.integration-card').filter({ has: page.getByRole('heading', { name: 'Chatline' }) }).getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('sends a local chat message and makes empty search results recoverable', async ({ page }) => {
+  await page.getByRole('button', { name: 'Chats', exact: true }).click()
+  await page.getByRole('button', { name: /Olivia Rhye/ }).click()
+  await page.getByLabel('Write a message').fill('Checking the local message flow')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(page.getByRole('log')).toContainText('Checking the local message flow')
+  await expect(page.getByRole('status')).toContainText('Message saved in this browser.')
+
+  await page.getByLabel('Search conversations').fill('nothing matches')
+  await expect(page.getByText('No conversations match your search.')).toBeVisible()
+  await page.getByRole('button', { name: 'Clear search' }).click()
+  await expect(page.getByRole('button', { name: /Olivia Rhye/ })).toBeVisible()
+})
