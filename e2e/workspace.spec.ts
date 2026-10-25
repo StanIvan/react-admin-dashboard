@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
@@ -187,4 +188,60 @@ test('sends a local chat message and makes empty search results recoverable', as
   await expect(page.getByText('No conversations match your search.')).toBeVisible()
   await page.getByRole('button', { name: 'Clear search' }).click()
   await expect(page.getByRole('button', { name: /Olivia Rhye/ })).toBeVisible()
+})
+
+test('keeps app and auth screens within a narrow mobile viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+
+  for (const name of ['Overview', 'Tasks', 'Apps', 'Chats', 'Team', 'Users', 'Projects', 'Reports', 'Settings', 'Auth']) {
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const navigationItem = name === 'Projects'
+      ? page.getByRole('button', { name: /^Projects/ })
+      : page.getByRole('button', { name, exact: true })
+    await navigationItem.click()
+    const widths = await page.evaluate(() => ({
+      viewport: document.body.clientWidth,
+      document: document.body.scrollWidth,
+    }))
+    expect(widths.document, `${name} should not cause horizontal page overflow`).toBeLessThanOrEqual(widths.viewport)
+  }
+})
+
+test('keeps a user dialog usable on a short mobile screen and styles key surfaces in dark mode', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 560 })
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Users', exact: true }).click()
+  await page.getByRole('button', { name: 'Invite user' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Invite a user' })
+  const bounds = await dialog.boundingBox()
+  expect(bounds).not.toBeNull()
+  expect(bounds!.y).toBeGreaterThanOrEqual(0)
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(560)
+  await expect(dialog.getByLabel('Full name')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Add invitation' })).toBeVisible()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
+
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('button', { name: 'Appearance' }).click()
+  await page.getByRole('switch', { name: 'Dark appearance' }).click()
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Apps', exact: true }).click()
+  const integrationCard = page.locator('.integration-card').first()
+  await expect(integrationCard).toHaveCSS('background-color', 'rgb(38, 38, 58)')
+  await expect(integrationCard.locator('.integration-category')).toHaveCSS('background-color', 'rgb(52, 51, 74)')
+
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Tasks', exact: true }).click()
+  await expect(page.locator('.task-filter').first()).toHaveCSS('background-color', 'rgb(38, 38, 58)')
+
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Users', exact: true }).click()
+  await expect(page.locator('.user-status-active').first()).toHaveCSS('background-color', 'rgb(38, 61, 50)')
+
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.getByRole('button', { name: 'Chats', exact: true }).click()
+  await page.getByRole('button', { name: 'New message' }).first().click()
+  await expect(page.getByRole('dialog', { name: 'New conversation' })).toHaveCSS('background-color', 'rgb(38, 38, 58)')
 })

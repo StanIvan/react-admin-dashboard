@@ -569,6 +569,32 @@
   background: #232336;
 }
 
+.dark-mode .chat-list-empty,
+.dark-mode .chat-no-recipients,
+.dark-mode .chat-thread-person span,
+.dark-mode .chat-contact-preview {
+  color: #b8b7ca;
+}
+
+.dark-mode .chat-date-divider::before,
+.dark-mode .chat-date-divider::after {
+  background: #3a394c;
+}
+
+.dark-mode .chat-recipient-list > button:hover {
+  background: #303047;
+}
+
+.dark-mode .chat-recipient-list strong {
+  color: #efedf9;
+}
+
+.dark-mode .chat-list-empty button,
+.dark-mode .chat-no-recipients button {
+  color: #c2bcff;
+  background: #393650;
+}
+
 @media (max-width: 760px) {
   .chat-workspace {
     min-height: min(630px, calc(100vh - 245px));

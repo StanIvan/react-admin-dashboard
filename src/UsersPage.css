@@ -373,6 +373,67 @@
   color: #e6e5f0;
 }
 
+.dark-mode .user-summary-grid article > span,
+.dark-mode .user-summary-grid article > small,
+.dark-mode .users-empty,
+.dark-mode .users-selection {
+  color: #b8b7ca;
+}
+
+.dark-mode .users-selection {
+  border-color: #3a394c;
+  background: #2c2b40;
+}
+
+.dark-mode .users-selection button {
+  color: #e5a4a0;
+  background: #442f36;
+}
+
+.dark-mode .users-empty button {
+  color: #c2bcff;
+}
+
+.dark-mode .user-role-admin {
+  color: #c2bcff;
+  background: #393650;
+}
+
+.dark-mode .user-role-editor {
+  color: #9bd5e8;
+  background: #263b48;
+}
+
+.dark-mode .user-role-viewer {
+  color: #c2c1d0;
+  background: #34334a;
+}
+
+.dark-mode .user-status-active {
+  color: #9bd1b2;
+  background: #263d32;
+}
+
+.dark-mode .user-status-invited {
+  color: #e4c885;
+  background: #443a27;
+}
+
+.dark-mode .user-status-suspended {
+  color: #e5a4a0;
+  background: #442f36;
+}
+
+.dark-mode .user-actions button:hover {
+  color: #c2bcff;
+  background: #393650;
+}
+
+.dark-mode .user-actions button:last-child:hover {
+  color: #e5a4a0;
+  background: #442f36;
+}
+
 @media (max-width: 700px) {
   .user-summary-grid {
     gap: 8px;

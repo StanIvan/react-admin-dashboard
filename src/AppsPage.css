@@ -311,6 +311,52 @@
   color: #efedf9;
 }
 
+.dark-mode .integration-card p,
+.dark-mode .apps-result-count,
+.dark-mode .integration-category,
+.dark-mode .integration-state,
+.dark-mode .demo-caption {
+  color: #b8b7ca;
+}
+
+.dark-mode .integration-category {
+  background: #34334a;
+}
+
+.dark-mode .integration-button {
+  border-color: #49475f;
+  color: #c2bcff;
+  background: #2c2b40;
+}
+
+.dark-mode .integration-button:hover {
+  background: #393650;
+}
+
+.dark-mode .integration-button.is-connected {
+  border-color: #395744;
+  color: #9bd1b2;
+  background: #263d32;
+}
+
+.dark-mode .integration-state.is-connected {
+  color: #9bd1b2;
+}
+
+.dark-mode .apps-empty {
+  border-color: #49475f;
+  color: #b8b7ca;
+}
+
+.dark-mode .apps-empty > strong {
+  color: #efedf9;
+}
+
+.dark-mode .apps-empty > button {
+  color: #c2bcff;
+  background: #393650;
+}
+
 .dark-mode .apps-demo-note {
   border-color: #414056;
   color: #bab8ca;
